@@ -6,6 +6,7 @@ dotenv.config();
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import path from "path";
 
 import authRoutes from "./routes/auth.route.js";
 import chatRoutes from "./routes/chat.route.js";
@@ -14,6 +15,7 @@ import { connectDB } from "./lib/db.js";
 const app = express();
 
 const PORT=process.env.PORT || 5001;
+const __dirname = path.resolve();
 
 // CORS configuration
 app.use(cors({
@@ -36,6 +38,14 @@ app.get("/api/health", (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "frontend", "dist")));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
+  });
+}
 
 app.listen(PORT, () => {
   console.log("Server is running on port:"+PORT);
