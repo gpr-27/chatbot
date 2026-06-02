@@ -1,0 +1,96 @@
+# =============================================================================
+# Groqbot — Render Blueprint (Infrastructure as Code)
+#
+# ONE Docker web service runs the whole app: the Node/Express backend serves
+# both the JSON API and the built React SPA, so everything is reachable on a
+# SINGLE origin (no CORS, one URL). Render builds the repo-root Dockerfile and
+# runs the resulting container.
+#
+# How config flows on Render (important):
+#   • Render automatically passes every env var below to the Docker build as a
+#     build ARG (matched by name) AND exposes it to the running container.
+#   • The frontend is static: Vite inlines VITE_* values at BUILD time. They are
+#     therefore declared here so the build args reach the Vite build.
+#   • Backend secrets are read at RUNTIME only and are NEVER referenced as ARGs
+#     in the Dockerfile, so they are never baked into the image.
+#
+# First deploy:
+#   1. Push this repo to GitHub.
+#   2. Render Dashboard → New → Blueprint → pick this repo.
+#   3. Render prompts for every var marked `sync: false` (the secrets). Paste them.
+#   4. Deploy. Open https://<your-service>.onrender.com
+#
+# Docs: https://render.com/docs/blueprint-spec
+# =============================================================================
+
+services:
+  - type: web
+    name: groqbot
+    runtime: docker
+    plan: free                 # bump to `starter` to avoid free-tier cold starts
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeploy: true
+
+    envVars:
+      # ---- Server (runtime) -------------------------------------------------
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"          # Render routes public traffic to this port
+      - key: LOG_LEVEL
+        value: info
+
+      # ---- CORS / client origin --------------------------------------------
+      # Single-origin deploy: the SPA calls a relative "/api" on the same host,
+      # so CORS never triggers for it. Set this to your public Render URL anyway
+      # (good for logs / any cross-origin client). You can fill it in after the
+      # first deploy once you know the exact URL.
+      - key: CLIENT_URL
+        sync: false
+
+      # ---- Database (runtime secret) ---------------------------------------
+      - key: MONGODB_URI         # e.g. a MongoDB Atlas SRV connection string
+        sync: false
+
+      # ---- Clerk auth -------------------------------------------------------
+      - key: CLERK_SECRET_KEY    # backend secret — runtime only
+        sync: false
+      - key: CLERK_PUBLISHABLE_KEY
+        sync: false
+
+      # ---- Guest accounts ---------------------------------------------------
+      - key: GUEST_RETENTION_DAYS
+        value: "30"
+
+      # ---- AI / LLM ---------------------------------------------------------
+      - key: LLM_PROVIDER
+        value: groq
+      - key: GROQ_API_KEY        # runtime secret — name derived from LLM_PROVIDER
+        sync: false
+      - key: DEFAULT_MODEL
+        value: llama-3.3-70b-versatile
+      - key: TITLE_MODEL
+        value: llama-3.1-8b-instant
+      - key: AVAILABLE_MODELS
+        value: llama-3.1-8b-instant,llama-3.3-70b-versatile,openai/gpt-oss-120b,openai/gpt-oss-20b,openai/gpt-oss-safeguard-20b,qwen/qwen3-32b,groq/compound,groq/compound-mini
+      - key: MODEL_LABELS
+        value: "llama-3.1-8b-instant:Llama 3.1 8B,llama-3.3-70b-versatile:Llama 3.3 70B,openai/gpt-oss-120b:GPT-OSS 120B,openai/gpt-oss-20b:GPT-OSS 20B,openai/gpt-oss-safeguard-20b:GPT-OSS Safeguard 20B,qwen/qwen3-32b:Qwen 3 32B,groq/compound:Groq Compound,groq/compound-mini:Groq Compound Mini"
+
+      # ---- Frontend (Vite) — inlined into the bundle at BUILD time ----------
+      # VITE_API_URL / VITE_SOCKET_URL are intentionally omitted: the Dockerfile
+      # defaults them to "" (same-origin), which is what a combined deploy wants.
+      - key: VITE_APP_ENV
+        value: production
+      - key: VITE_CLERK_PUBLISHABLE_KEY   # publishable (browser) — set to the same value as CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_LLM_PROVIDER
+        value: groq
+      - key: VITE_DEFAULT_MODEL
+        value: llama-3.3-70b-versatile
+      - key: VITE_AVAILABLE_MODELS
+        value: llama-3.1-8b-instant,llama-3.3-70b-versatile,openai/gpt-oss-120b,openai/gpt-oss-20b,openai/gpt-oss-safeguard-20b,qwen/qwen3-32b,groq/compound,groq/compound-mini
+      - key: VITE_MODEL_LABELS
+        value: "llama-3.1-8b-instant:Llama 3.1 8B,llama-3.3-70b-versatile:Llama 3.3 70B,openai/gpt-oss-120b:GPT-OSS 120B,openai/gpt-oss-20b:GPT-OSS 20B,openai/gpt-oss-safeguard-20b:GPT-OSS Safeguard 20B,qwen/qwen3-32b:Qwen 3 32B,groq/compound:Groq Compound,groq/compound-mini:Groq Compound Mini"

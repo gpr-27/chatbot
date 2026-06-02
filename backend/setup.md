@@ -101,29 +101,29 @@ npm run dev          # backend on http://localhost:5001
 npm run frontend     # frontend on http://localhost:5173
 ```
 
-### Production with Docker
+### Production on Render (Docker, one service)
 
 A single multi-stage image (`Dockerfile` at the repo root) builds the SPA and
 runs the API that serves it — the whole app is reachable on **one origin/port**,
-so there is no CORS to configure and only one URL to expose.
-
-```bash
-# from the repo root — reads the shared .env for build args + runtime config
-docker compose up --build
-
-# then open http://localhost:5002   (or whatever PORT is set to)
-```
+so there is no CORS to configure and only one URL to expose. The repo ships a
+[`render.yaml`](../render.yaml) Blueprint that defines this as a single Docker
+web service; deploy it via **Render → New → Blueprint**. See the main
+[`Readme.md`](../Readme.md#deploy-to-render-one-service-one-url) for the full
+step-by-step.
 
 Notes:
 
-- `VITE_*` values are inlined into the bundle at **build time** (passed as build
-  args); backend secrets are injected at **runtime** via `env_file` and are never
-  baked into the image. The build context excludes `.env` (see `.dockerignore`).
-- `docker compose` forces `NODE_ENV=production`. Set `CLIENT_URL` to the public
-  URL and leave `VITE_API_URL` blank (same origin) for a real deploy.
+- `VITE_*` values are inlined into the bundle at **build time**; on Render every
+  service env var is forwarded to the Docker build as an `ARG` of the same name.
+  Backend secrets are read only at **runtime** and are never referenced as build
+  args, so they are never baked into the image. The build context also excludes
+  `.env` (see `.dockerignore`).
+- Set `CLIENT_URL` to the public URL and leave `VITE_API_URL` blank (same origin)
+  for the combined deploy. Render injects `PORT` (set to `10000` in the Blueprint).
 - The container runs as a non-root user, is supervised by `tini` (clean SIGTERM →
-  graceful shutdown), and exposes a `/api/health` healthcheck.
-- The image is portable — run it on Render, Railway, Fly.io, Cloud Run, a VM, etc.
+  graceful shutdown), and Render health-checks `/api/health`.
+- The image is portable — run it anywhere with `docker build`/`docker run` (see
+  the Readme), or on Railway, Fly.io, Cloud Run, a VM, etc.
 
 ## 4. API Overview
 

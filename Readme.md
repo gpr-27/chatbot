@@ -41,15 +41,14 @@ and persistent chat history.
 # 1. Install everything + build the frontend
 npm run build
 
-# 2. Configure the backend and frontend
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
+# 2. Configure the ONE shared .env (backend + frontend read the same file)
+cp .env.example .env
 #   → set GROQ_API_KEY (https://console.groq.com/keys)
 #   → set MONGODB_URI
 #   → set Clerk keys from https://dashboard.clerk.com/~/api-keys:
 #       backend  CLERK_PUBLISHABLE_KEY + CLERK_SECRET_KEY
-#       frontend VITE_CLERK_PUBLISHABLE_KEY
-#     (the .env files currently hold placeholders — auth fails until replaced)
+#       frontend VITE_CLERK_PUBLISHABLE_KEY (same value as the publishable key)
+#     (.env.example holds placeholders — auth fails until replaced)
 
 # 3. Run in development (backend :5001 + frontend :5173)
 npm run dev:both
@@ -59,56 +58,79 @@ Open **http://localhost:5173**.
 
 ## ⚙️ Environment Variables
 
-Everything is configured via env vars — **nothing is hardcoded**. Copy each
-`.env.example` to `.env` and fill in the values. See
-[`backend/setup.md`](backend/setup.md) for per-variable notes.
+Everything is configured via env vars — **nothing is hardcoded**. There is ONE
+shared `.env` at the repo root (the backend reads every var; Vite reads the same
+file but only exposes `VITE_*` to the browser). Copy `.env.example` → `.env` and
+fill in the values. See [`backend/setup.md`](backend/setup.md) for per-variable
+notes. In production on Render these are defined in [`render.yaml`](render.yaml)
+instead (see below).
 
-**Backend (`backend/.env`)** — required: `NODE_ENV`, `PORT`, `CLIENT_URL`,
-`MONGODB_URI`, `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `LOG_LEVEL`,
-`LLM_PROVIDER`, `GROQ_API_KEY`, `DEFAULT_MODEL`, `AVAILABLE_MODELS`; optional:
-`TITLE_MODEL`, `MODEL_LABELS`. (`JWT_SECRET` is no longer used.)
+**Backend** — required: `NODE_ENV`, `PORT`, `CLIENT_URL`, `MONGODB_URI`,
+`CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `LOG_LEVEL`, `LLM_PROVIDER`,
+`GROQ_API_KEY`, `DEFAULT_MODEL`, `AVAILABLE_MODELS`, `GUEST_RETENTION_DAYS`;
+optional: `TITLE_MODEL`, `MODEL_LABELS`.
 
-**Frontend (`frontend/.env`)** — required: `VITE_APP_ENV`,
-`VITE_CLERK_PUBLISHABLE_KEY`, `VITE_LLM_PROVIDER`, `VITE_DEFAULT_MODEL`,
-`VITE_AVAILABLE_MODELS`; optional: `VITE_API_URL`, `VITE_SOCKET_URL`,
-`VITE_MODEL_LABELS`. All `VITE_*` vars are injected at **build time**. Leave
-`VITE_API_URL` blank when the backend serves the SPA (the combined Docker image /
-single-URL deploy) so the browser calls a relative `/api`; set it only when the
-API lives on a different origin.
+**Frontend** — required: `VITE_APP_ENV`, `VITE_CLERK_PUBLISHABLE_KEY`,
+`VITE_LLM_PROVIDER`, `VITE_DEFAULT_MODEL`, `VITE_AVAILABLE_MODELS`; optional:
+`VITE_API_URL`, `VITE_SOCKET_URL`, `VITE_MODEL_LABELS`. All `VITE_*` vars are
+inlined at **build time**. Leave `VITE_API_URL` blank when the backend serves the
+SPA (the combined single-origin deploy) so the browser calls a relative `/api`;
+set it only when the API lives on a different origin.
 
 Get all Clerk keys from the [Clerk dashboard](https://dashboard.clerk.com/~/api-keys).
 The committed `.env` files only contain **placeholders** — the backend won't
 authenticate and the frontend `<ClerkProvider>` will error until you paste your
 real keys.
 
-### Production
+### Deploy to Render (one service, one URL)
 
-**Bare metal / Node:**
+The whole app ships as a single Docker image: a multi-stage build compiles the
+SPA and the Node/Express backend serves both the API and that SPA, so everything
+is reachable on **one origin** (no CORS, one URL). [`render.yaml`](render.yaml)
+is a Blueprint that defines this as a single Docker web service.
+
+1. Push this repo to GitHub.
+2. In the [Render dashboard](https://dashboard.render.com): **New → Blueprint**,
+   then select this repository. Render reads `render.yaml`.
+3. Render prompts for every secret (the `sync: false` vars). Paste:
+   - `MONGODB_URI` — your MongoDB Atlas connection string
+   - `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, and
+     `VITE_CLERK_PUBLISHABLE_KEY` (the last two share the publishable value)
+   - `GROQ_API_KEY` — from <https://console.groq.com/keys>
+   - `CLIENT_URL` — your `https://<service>.onrender.com` URL (fill in after the
+     first deploy if you don't know it yet; the same-origin SPA works regardless)
+4. **Apply** / **Deploy**, then open `https://<service>.onrender.com`.
+
+How config reaches the build: Render automatically forwards every service env
+var to the Docker build as an `ARG` of the same name, so the `VITE_*` values are
+inlined into the bundle at build time; backend secrets are read only at runtime
+and are never referenced as build args, so they are never baked into the image.
+The container runs as a non-root user, is supervised by `tini` (clean SIGTERM →
+graceful shutdown), and Render health-checks `/api/health`.
+
+> The Docker build context excludes `.env` (see `.dockerignore`), so secrets are
+> never copied into the image — only the public `VITE_*` build args are inlined.
+
+**Run the same image anywhere (optional):**
 
 ```bash
-npm run build      # builds frontend/dist
-npm start          # NODE_ENV=production serves the API + built UI on :5001
+# build (pass the public VITE_* values as build args), then run with backend env
+docker build -t groqbot \
+  --build-arg VITE_APP_ENV=production \
+  --build-arg VITE_LLM_PROVIDER=groq \
+  --build-arg VITE_DEFAULT_MODEL=llama-3.3-70b-versatile \
+  --build-arg VITE_AVAILABLE_MODELS=llama-3.3-70b-versatile \
+  --build-arg VITE_CLERK_PUBLISHABLE_KEY=pk_live_xxx .
+docker run -p 10000:10000 --env-file .env -e NODE_ENV=production -e PORT=10000 groqbot
+# then open http://localhost:10000
 ```
 
-**Docker (recommended — one image, one URL):**
-
-A single multi-stage image builds the SPA and runs the API that serves it, so the
-whole app is reachable on one origin (no CORS). All config comes from the shared
-root `.env`: `VITE_*` are read as build args, backend vars are injected at runtime.
+**Bare metal / Node (no Docker):**
 
 ```bash
-docker compose up --build        # build + run
-# then open http://localhost:5002   (or whatever PORT is in .env)
+npm run build      # installs deps + builds frontend/dist
+npm start          # NODE_ENV=production serves the API + built UI on $PORT
 ```
-
-`docker compose` forces `NODE_ENV=production` and runs as a non-root user with a
-`/api/health` healthcheck and graceful (SIGTERM) shutdown. For a real deploy, set
-`CLIENT_URL` to your public URL and keep `VITE_API_URL` blank (same origin). The
-image can run anywhere — Render, Railway, Fly.io, Cloud Run, a VM, etc. See
-[`.env.example`](.env.example) for the production variable notes.
-
-> The build context excludes `.env` (see `.dockerignore`), so secrets are never
-> baked into the image — only the public `VITE_*` build args are.
 
 ## 🔌 API
 
@@ -124,7 +146,7 @@ Highlights:
 ```
 backend/
   src/
-    lib/groq.js          # Groq service: streaming, titles, fallback, model allow-list
+    lib/llm.js           # LLM service: streaming, titles, fallback, model allow-list
     controllers/         # auth + chat (incl. SSE streaming, regenerate)
     routes/ models/ middleware/
 frontend/

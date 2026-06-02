@@ -1,10 +1,9 @@
-// Container / local entrypoint.
+// Server entrypoint (container / local / Render).
 //
 // Importing config first ensures the environment is parsed and validated before
-// anything else runs. This entrypoint owns the long-running concerns that a
-// serverless platform handles for us: connecting the DB up front, serving the
-// built SPA in production, listening on a port, and draining cleanly on
-// shutdown. On Vercel the app is driven by api/index.mjs instead.
+// anything else runs. This entrypoint owns the long-running concerns: connecting
+// the DB up front, serving the built SPA in production, listening on a port, and
+// draining cleanly on shutdown (SIGTERM from Render / Docker / Ctrl-C).
 import { config, printConfigDiagnostics } from "./config/index.js";
 import { logger } from "./lib/logger.js";
 

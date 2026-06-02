@@ -24,8 +24,10 @@
 logs
 npm-debug.log*
 
-# Docker / compose files don't belong inside the image
+# Build/deploy metadata — not needed inside the image
 Dockerfile
 .dockerignore
-docker-compose.yml
-docker-compose.*.yml
+render.yaml
+Readme.md
+package.json
+package-lock.json

@@ -34,11 +34,10 @@ const isLocalhostOrigin = (origin) =>
  * error handler.
  *
  * It deliberately does NOT call `listen`, connect to the database, or — unless
- * `serveStaticSpa` is true — serve the built SPA. Two callers consume it:
- *   • index.js (container / local): connects the DB, serves the SPA in
- *     production, and listens on a port.
- *   • api/index.mjs (Vercel): the platform serves the static SPA from the CDN
- *     and rewrites only /api/* to this app, which runs as a serverless function.
+ * `serveStaticSpa` is true — serve the built SPA. index.js (the server
+ * entrypoint) consumes it: in production it builds the app with
+ * `serveStaticSpa: true` so the API and SPA share one origin; in development it
+ * passes `false` and the Vite dev server serves the SPA instead.
  */
 export function createApp({ serveStaticSpa = false } = {}) {
   const app = express();
@@ -68,7 +67,7 @@ export function createApp({ serveStaticSpa = false } = {}) {
   // any localhost / 127.0.0.1 port, because the Vite dev server shifts ports when
   // several projects run at once; without this, a port mismatch silently blocks
   // every /api call and the UI drops to "Basic mode". Production stays strict.
-  // (On the combined Vercel/Docker deploy the SPA and API share one origin, so
+  // (On the combined single-origin deploy the SPA and API share one origin, so
   // the browser never even runs a CORS check.)
   const corsOrigin = (origin, callback) => {
     // No Origin header (same-origin nav, curl, native apps) — allow.
@@ -114,10 +113,10 @@ export function createApp({ serveStaticSpa = false } = {}) {
     });
   });
 
-  // In the combined container/local deploy, serve the built SPA. Fingerprinted
+  // In production, serve the built SPA from this same server. Fingerprinted
   // assets are immutable, so cache them hard; index.html is served by the
   // fallback with no long cache so new deploys are picked up immediately.
-  // On Vercel this stays OFF — the platform serves the SPA from its CDN.
+  // In development this stays OFF — the Vite dev server serves the SPA.
   if (serveStaticSpa) {
     app.use(express.static(FRONTEND_DIST, { maxAge: "1y", index: false }));
     app.get("*", (req, res) => {

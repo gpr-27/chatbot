@@ -6,9 +6,10 @@
 # runs from one container on one origin (no CORS, one URL).
 #
 # Vite inlines VITE_* variables into the static bundle at BUILD time, so those
-# are passed as build args (the compose file feeds them from the shared .env).
-# Backend secrets/config are injected at RUN time as environment variables and
-# are never baked into the image.
+# are passed as build args. On Render, every service env var is automatically
+# forwarded to the build as an ARG of the same name (see render.yaml). Backend
+# secrets/config are injected at RUN time as environment variables and are never
+# referenced as ARGs here, so they are never baked into the image.
 ###############################################################################
 
 # ----------------------------------------------------------------------------
@@ -74,12 +75,14 @@ COPY --chown=node:node --from=frontend /app/frontend/dist /app/frontend/dist
 
 USER node
 
-# Documentation only — the real port comes from the PORT env var at runtime.
-EXPOSE 5002
+# Documentation only — the real port comes from the PORT env var at runtime
+# (Render injects PORT and routes public traffic to it; render.yaml sets 10000).
+EXPOSE 10000
 
-# Liveness check against the app's own health endpoint.
+# Liveness check against the app's own health endpoint. Render uses its own
+# healthCheckPath probe; this keeps `docker run` healthy anywhere else too.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD wget -qO- "http://127.0.0.1:${PORT:-5002}/api/health" >/dev/null 2>&1 || exit 1
+  CMD wget -qO- "http://127.0.0.1:${PORT:-10000}/api/health" >/dev/null 2>&1 || exit 1
 
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "backend/src/index.js"]
