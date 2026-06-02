@@ -1,0 +1,341 @@
+/* ============================================================
+   Shared UI primitives — boot, toasts, dialogs, buttons, marks
+   ============================================================ */
+
+/* ---- Brand spark mark ---- */
+.brand-spark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.brand-spark svg {
+  display: block;
+  filter: drop-shadow(0 2px 6px rgba(255, 93, 59, 0.35));
+}
+.brand-spark--glow {
+  position: relative;
+}
+.brand-spark--glow::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: radial-gradient(circle, rgba(255, 122, 61, 0.45), transparent 65%);
+  filter: blur(8px);
+  z-index: -1;
+  animation: floatGlow 4s var(--ease) infinite;
+}
+
+/* ---- Avatar ---- */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-full);
+  font-family: var(--font-display);
+  font-weight: 650;
+  color: #1a0f08;
+  letter-spacing: -0.02em;
+  flex: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+/* ---- Crash / error-boundary fallback ---- */
+.crash {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  padding: 24px;
+  background: var(--bg);
+}
+.crash h1 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.crash p {
+  color: var(--text-muted);
+  max-width: 42ch;
+}
+.crash .btn {
+  margin-top: 8px;
+}
+
+/* ---- Boot screen ---- */
+.boot-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  background: var(--bg);
+  z-index: 50;
+}
+.boot-mark {
+  animation: popIn 0.5s var(--ease) both;
+}
+.boot-bar {
+  width: 180px;
+  height: 4px;
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.boot-bar span {
+  display: block;
+  height: 100%;
+  width: 40%;
+  border-radius: inherit;
+  background: var(--gradient-accent);
+  animation: bootSlide 1.1s var(--ease) infinite;
+}
+@keyframes bootSlide {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(360%); }
+}
+.boot-text {
+  color: var(--text-faint);
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0.7em 1.3em;
+  border-radius: var(--r-md);
+  font-weight: 600;
+  font-size: 0.92rem;
+  transition: transform var(--t-fast) var(--ease), background var(--t-fast),
+    box-shadow var(--t-fast), opacity var(--t-fast);
+}
+.btn:active {
+  transform: translateY(1px) scale(0.99);
+}
+.btn--primary {
+  background: var(--gradient-accent);
+  color: #1a0f08;
+  box-shadow: var(--shadow-accent);
+}
+.btn--primary:hover {
+  box-shadow: 0 18px 56px -14px rgba(255, 93, 59, 0.6);
+}
+.btn--danger {
+  background: linear-gradient(135deg, #ff4d4d, #ff7849);
+  color: #2a0a08;
+}
+.btn--ghost {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn--ghost:hover {
+  background: var(--surface-hover);
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-md);
+  color: var(--text-muted);
+  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
+}
+.icon-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.icon-btn:active {
+  transform: scale(0.94);
+}
+
+/* ---- Spinner ---- */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(26, 15, 8, 0.35);
+  border-top-color: #1a0f08;
+  animation: spin 0.7s linear infinite;
+}
+/* Spinner on a neutral/ghost surface (e.g. the guest button) */
+.spinner--ghost {
+  border-color: var(--border-strong);
+  border-top-color: var(--text);
+}
+
+/* ---- Theme toggle ---- */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+}
+.theme-toggle__track {
+  position: relative;
+  width: 50px;
+  height: 28px;
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: background var(--t-med);
+}
+.theme-toggle__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #1a0f08;
+  background: var(--gradient-accent);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--t-med) var(--ease);
+}
+.theme-toggle__track[data-dark="false"] .theme-toggle__thumb {
+  transform: translateX(22px);
+}
+.theme-toggle--compact .theme-toggle__track {
+  width: 44px;
+  height: 24px;
+}
+.theme-toggle--compact .theme-toggle__thumb {
+  width: 18px;
+  height: 18px;
+}
+.theme-toggle--compact .theme-toggle__track[data-dark="false"] .theme-toggle__thumb {
+  transform: translateX(20px);
+}
+
+/* ---- Toasts ---- */
+.toast-stack {
+  position: fixed;
+  bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 100;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--glass);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-lg);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  animation: popIn 0.32s var(--ease) both;
+}
+.toast__icon { flex: none; }
+.toast--success .toast__icon { color: #4ade80; }
+.toast--error .toast__icon { color: #ff6b6b; }
+.toast--info .toast__icon { color: var(--accent); }
+.toast__msg { max-width: 360px; }
+.toast__close {
+  display: grid;
+  place-items: center;
+  color: var(--text-faint);
+  border-radius: 6px;
+  padding: 2px;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+.toast__close:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+/* ---- Confirm dialog ---- */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fadeIn 0.2s var(--ease);
+}
+.dialog {
+  width: min(420px, 100%);
+  background: var(--bg-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg);
+  padding: 28px 26px 22px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  animation: popIn 0.28s var(--ease) both;
+}
+.dialog__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-md);
+  display: grid;
+  place-items: center;
+  margin: 0 auto 14px;
+  color: var(--accent);
+  background: var(--surface-2);
+}
+.dialog__icon.danger {
+  color: #ff7a6b;
+  background: rgba(255, 90, 70, 0.12);
+}
+.dialog__title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 650;
+  margin-bottom: 6px;
+}
+.dialog__msg {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  margin-bottom: 22px;
+}
+.dialog__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.dialog__actions .btn {
+  flex: 1;
+}
+
+/* ---- Responsive refinements (mobile audit pass) ---- */
+.toast__msg { max-width: calc(100vw - 80px); }
+.dialog__msg { max-width: 42ch; margin-left: auto; margin-right: auto; }
+@media (max-width: 380px) {
+  .dialog { padding: 22px 16px 16px; }
+}
+/* Touch targets for shared overlays */
+@media (pointer: coarse) {
+  .icon-btn { width: 44px; height: 44px; }
+  .toast__close { width: 40px; height: 40px; }
+  .dialog__actions .btn { padding: 13px 18px; }
+}
