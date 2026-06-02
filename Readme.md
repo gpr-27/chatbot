@@ -1,92 +1,118 @@
-🔍 Frontend API Call Locations
+# ⚡ Groqbot
 
+A premium, lightning-fast AI chat app powered by **Groq's LPU inference engine**.
+Full-stack MERN (MongoDB · Express · React · Node) with token-by-token streaming,
+a polished multi-theme UI, markdown + syntax-highlighted code, model switching,
+and persistent chat history.
 
-1. Authentication APIs
+> Migrated from Gemini → **Groq**, with a complete frontend rebuild.
 
+---
 
-📍 App.jsx (Lines 14-29)
-API Call: GET /api/auth/check
-Purpose: Auto-login check when app loads
-Function: checkAuthStatus()
-When: On component mount via useEffect()
-📍 LoginForm.jsx (Lines 12-28)
-API Call: POST /api/auth/login
-Purpose: User login
-Function: handleSubmit()
-When: Form submission with email/password
-📍 SignupForm.jsx (Lines 13-29)
-API Call: POST /api/auth/signup
-Purpose: User registration
-Function: handleSubmit()
-When: Form submission with fullName, email, password
-📍 HomePage.jsx (Lines 173-186)
-API Call: POST /api/auth/logout
-Purpose: User logout
-Function: handleLogout()
-When: Logout button clicked
+## ✨ Features
 
+- **Real-time streaming** — responses stream in token-by-token over SSE.
+- **Multiple Groq models** — switch between Llama 3.3 70B, Llama 3.1 8B,
+  GPT-OSS 120B and Gemma 2 9B on the fly (selection is remembered).
+- **Rich markdown** — headings, lists, tables, blockquotes, inline code, and
+  syntax-highlighted code blocks with one-click copy.
+- **Conversation management** — auto-generated titles, search, inline rename,
+  delete, and clear-all (with confirmation dialogs).
+- **Regenerate & stop** — re-roll the last answer or halt generation mid-stream.
+- **Light / dark themes** — warm "velocity" aesthetic, remembered across sessions.
+- **Secure auth** — managed by [Clerk](https://clerk.com): the frontend wraps
+  the app in `<ClerkProvider>`, and the backend verifies requests with
+  `clerkMiddleware()` / `getAuth`. (Custom JWT auth has been removed.)
+- **Responsive** — collapsible sidebar on desktop, drawer on mobile.
+- **Graceful fallback** — works (with canned replies) even without an API key.
 
-2. Chat APIs
+## 🧱 Tech Stack
 
+| Layer    | Tech                                                              |
+|----------|-------------------------------------------------------------------|
+| Frontend | React 19, Vite 7, react-markdown, rehype-highlight, lucide-react  |
+| Backend  | Node, Express, Mongoose, groq-sdk, Clerk (@clerk/express)         |
+| Database | MongoDB (local or Atlas)                                          |
+| AI       | Groq (default model: `llama-3.3-70b-versatile`)                   |
 
-📍 HomePage.jsx (Lines 31-42)
-API Call: GET /api/chat/ai-status
-Purpose: Check AI service status
-Function: checkAIStatus()
-When: Component mount + after sending messages
-📍 HomePage.jsx (Lines 44-54)
-API Call: GET /api/chat/sessions
-Purpose: Load user's chat sessions
-Function: loadChatSessions()
-When: Component mount + after sending messages
-📍 HomePage.jsx (Lines 56-68)
-API Call: GET /api/chat/history/:sessionId
-Purpose: Load conversation history for specific session
-Function: loadConversationHistory()
-When: Session selection (currentSessionId changes)
-📍 HomePage.jsx (Lines 70-117)
-API Call: POST /api/chat/message
-Purpose: Send message and get AI response
-Function: sendMessage()
-When: User sends a message via input form
-📍 HomePage.jsx (Lines 131-145)
-API Call: DELETE /api/chat/session/:sessionId
-Purpose: Delete specific chat session
-Function: deleteSession()
-When: Delete button clicked on session
-📍 HomePage.jsx (Lines 147-164)
-API Call: DELETE /api/chat/clear-all
-Purpose: Clear all chat history
-Function: clearAllChats()
-When: Clear all button clicked (with confirmation)
+## 🚀 Getting Started
 
+```bash
+# 1. Install everything + build the frontend
+npm run build
 
-3. API Call Flow Summary
+# 2. Configure the backend and frontend
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+#   → set GROQ_API_KEY (https://console.groq.com/keys)
+#   → set MONGODB_URI
+#   → set Clerk keys from https://dashboard.clerk.com/~/api-keys:
+#       backend  CLERK_PUBLISHABLE_KEY + CLERK_SECRET_KEY
+#       frontend VITE_CLERK_PUBLISHABLE_KEY
+#     (the .env files currently hold placeholders — auth fails until replaced)
 
+# 3. Run in development (backend :5001 + frontend :5173)
+npm run dev:both
+```
 
-App Launch:
-├── App.jsx → checkAuthStatus() → GET /api/auth/check
-└── If authenticated:
-    └── HomePage.jsx → Mount
-        ├── checkAIStatus() → GET /api/chat/ai-status
-        └── loadChatSessions() → GET /api/chat/sessions
+Open **http://localhost:5173**.
 
-User Actions:
-├── Login → LoginForm.jsx → POST /api/auth/login
-├── Signup → SignupForm.jsx → POST /api/auth/signup
-├── Send Message → HomePage.jsx → POST /api/chat/message
-├── Select Session → HomePage.jsx → GET /api/chat/history/:sessionId
-├── Delete Session → HomePage.jsx → DELETE /api/chat/session/:sessionId
-├── Clear All → HomePage.jsx → DELETE /api/chat/clear-all
-└── Logout → HomePage.jsx → POST /api/auth/logout
+## ⚙️ Environment Variables
 
+Everything is configured via env vars — **nothing is hardcoded**. Copy each
+`.env.example` to `.env` and fill in the values. See
+[`backend/setup.md`](backend/setup.md) for per-variable notes.
 
-4. Key Features
+**Backend (`backend/.env`)** — required: `NODE_ENV`, `PORT`, `CLIENT_URL`,
+`MONGODB_URI`, `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `LOG_LEVEL`,
+`LLM_PROVIDER`, `GROQ_API_KEY`, `DEFAULT_MODEL`, `AVAILABLE_MODELS`; optional:
+`TITLE_MODEL`, `MODEL_LABELS`. (`JWT_SECRET` is no longer used.)
 
+**Frontend (`frontend/.env`)** — required: `VITE_API_URL`, `VITE_APP_ENV`,
+`VITE_CLERK_PUBLISHABLE_KEY`, `VITE_LLM_PROVIDER`, `VITE_DEFAULT_MODEL`,
+`VITE_AVAILABLE_MODELS`; optional: `VITE_SOCKET_URL`, `VITE_MODEL_LABELS`. All
+`VITE_*` vars are injected at build time; in production `VITE_API_URL` is the
+deployed origin.
 
-🔐 Auto-Authentication: App automatically checks auth status on load
-💬 Real-time Chat: Messages sent via POST with immediate UI updates
-📚 Session Management: Sessions loaded and managed in sidebar
-🤖 AI Status: Continuously monitors Gemini AI availability
-🔄 State Sync: API calls update both local state and backend data
-All API calls use credentials: 'include' for cookie-based authentication and have proper error handling with user feedback!
+Get all Clerk keys from the [Clerk dashboard](https://dashboard.clerk.com/~/api-keys).
+The committed `.env` files only contain **placeholders** — the backend won't
+authenticate and the frontend `<ClerkProvider>` will error until you paste your
+real keys.
+
+### Production
+
+```bash
+npm run build      # builds frontend/dist
+npm start          # NODE_ENV=production serves the API + built UI on :5001
+```
+
+## 🔌 API
+
+See [`backend/setup.md`](backend/setup.md) for the full endpoint reference.
+Highlights:
+
+- `POST /api/chat/message/stream` — stream a reply (SSE: `meta` → `token`… → `done`)
+- `GET  /api/chat/models` — available Groq models + live status
+- `PATCH /api/chat/session/:id` — rename a conversation
+
+## 📁 Structure
+
+```
+backend/
+  src/
+    lib/groq.js          # Groq service: streaming, titles, fallback, model allow-list
+    controllers/         # auth + chat (incl. SSE streaming, regenerate)
+    routes/ models/ middleware/
+frontend/
+  src/
+    components/          # AuthScreen, ChatApp, Sidebar, ChatView, Composer, …
+    context/             # Theme + Toast providers
+    lib/api.js           # API client + SSE stream parser
+    index.css            # design system (tokens, theme, markdown)
+    styles/              # shared + chat stylesheets
+```
+
+## 🔐 Security note
+
+`backend/.env` and `frontend/.env` are git-ignored — keep real secrets there.
+The committed `*.env.example` files must only ever contain placeholders.
