@@ -1,12 +1,11 @@
 import express from "express";
-import {checkAuth, signup, login, logout } from "../controllers/auth.controller.js";
-import { protectRoute } from "../middleware/auth.middleware.js";
+import { createGuest, getGuest, upgradeGuest } from "../controllers/guest.controller.js";
 
 const router = express.Router();
 
-router.post("/signup", signup);
-router.post("/login", login);
-router.post("/logout", logout);
-router.get("/check", protectRoute, checkAuth);
+// Anonymous guest sessions (no Clerk account required).
+router.post("/guest", createGuest); // create a new guest
+router.get("/guest", getGuest); // restore an existing guest (X-Guest-Id header)
+router.post("/guest/upgrade", upgradeGuest); // migrate guest → signed-in Clerk user
 
 export default router;
