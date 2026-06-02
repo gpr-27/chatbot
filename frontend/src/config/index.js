@@ -5,13 +5,17 @@
 // ids, provider names, or fallback values are hardcoded anywhere else.
 //
 // Required env vars (build fails fast with a clear error if any is missing):
-//   VITE_API_URL          base URL of the backend API (trailing "/" stripped)
 //   VITE_APP_ENV          deployment environment label
 //   VITE_LLM_PROVIDER     provider name surfaced in the UI
 //   VITE_DEFAULT_MODEL    default model id (must be one of VITE_AVAILABLE_MODELS)
 //   VITE_AVAILABLE_MODELS comma-separated list of model ids
 //
 // Optional env vars:
+//   VITE_API_URL          base URL of the backend API (trailing "/" stripped).
+//                         Leave blank when the SPA is served from the SAME origin
+//                         as the API (the combined Docker image / single-URL
+//                         deploy) — requests then go to a relative "/api/…" path.
+//                         Set it only when the API lives on a different origin.
 //   VITE_SOCKET_URL       websocket URL (defaults to "")
 //   VITE_MODEL_LABELS     "id:Label,id2:Label2" display-name overrides
 
@@ -36,7 +40,9 @@ function optional(name, fallback = "") {
   return String(value).trim();
 }
 
-const apiUrl = required("VITE_API_URL").replace(/\/+$/, "");
+// Same-origin combined deploys leave this blank -> requests hit a relative
+// "/api/…" path on whatever origin serves the app.
+const apiUrl = optional("VITE_API_URL", "").replace(/\/+$/, "");
 const socketUrl = optional("VITE_SOCKET_URL", "").replace(/\/+$/, "");
 const appEnv = required("VITE_APP_ENV");
 const provider = required("VITE_LLM_PROVIDER");

@@ -1,0 +1,31 @@
+# Keep the build context small and secrets OUT of the image.
+
+# Dependencies & build output are recreated inside the image.
+**/node_modules
+**/dist
+**/dist-ssr
+
+# Secrets — NEVER copy any real env file into the build context. VITE_* values
+# are supplied as build args; backend config is injected at runtime.
+.env
+.env.*
+
+# VCS / tooling / editor noise
+.git
+.gitignore
+.github
+.claude
+.vscode
+.idea
+**/.DS_Store
+
+# Logs & local caches
+*.log
+logs
+npm-debug.log*
+
+# Docker / compose files don't belong inside the image
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml

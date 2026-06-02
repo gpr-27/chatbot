@@ -1,0 +1,24 @@
+# Never upload secrets — env vars are configured on the Vercel project instead.
+.env
+.env.*
+
+# Reinstalled / rebuilt on Vercel.
+node_modules
+**/node_modules
+frontend/dist
+backend/dist
+
+# Container deploy artifacts — irrelevant on Vercel.
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml
+
+# VCS / CI / tooling / editor noise.
+.git
+.github
+.claude
+.vscode
+.idea
+**/.DS_Store
+*.log

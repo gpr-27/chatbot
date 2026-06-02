@@ -8,12 +8,26 @@
     "frontend": "cd frontend && npm run dev",
     "dev:both": "concurrently \"npm run dev\" \"npm run frontend\"",
     "build": "npm install && npm install --prefix backend && npm install --prefix frontend --include=dev && npm run build --prefix frontend",
+    "vercel-build": "npm install --prefix frontend --include=dev && npm run build --prefix frontend",
     "start": "node backend/src/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "comment": "Backend runtime deps are duplicated here (not just in backend/package.json) so Vercel installs them at the repo root and can bundle api/index.mjs, which imports backend/src. Keep versions in sync with backend/package.json.",
+  "dependencies": {
+    "@clerk/express": "^2.1.22",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^4.21.2",
+    "groq-sdk": "^1.2.1",
+    "helmet": "^8.2.0",
+    "mongoose": "^8.16.3",
+    "uuid": "^11.1.0"
+  },
   "devDependencies": {
     "concurrently": "^9.2.0",
     "nodemon": "^3.1.10"

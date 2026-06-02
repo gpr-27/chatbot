@@ -101,6 +101,30 @@ npm run dev          # backend on http://localhost:5001
 npm run frontend     # frontend on http://localhost:5173
 ```
 
+### Production with Docker
+
+A single multi-stage image (`Dockerfile` at the repo root) builds the SPA and
+runs the API that serves it — the whole app is reachable on **one origin/port**,
+so there is no CORS to configure and only one URL to expose.
+
+```bash
+# from the repo root — reads the shared .env for build args + runtime config
+docker compose up --build
+
+# then open http://localhost:5002   (or whatever PORT is set to)
+```
+
+Notes:
+
+- `VITE_*` values are inlined into the bundle at **build time** (passed as build
+  args); backend secrets are injected at **runtime** via `env_file` and are never
+  baked into the image. The build context excludes `.env` (see `.dockerignore`).
+- `docker compose` forces `NODE_ENV=production`. Set `CLIENT_URL` to the public
+  URL and leave `VITE_API_URL` blank (same origin) for a real deploy.
+- The container runs as a non-root user, is supervised by `tini` (clean SIGTERM →
+  graceful shutdown), and exposes a `/api/health` healthcheck.
+- The image is portable — run it on Render, Railway, Fly.io, Cloud Run, a VM, etc.
+
 ## 4. API Overview
 
 | Method | Endpoint                       | Purpose                              |

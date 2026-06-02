@@ -68,11 +68,13 @@ Everything is configured via env vars — **nothing is hardcoded**. Copy each
 `LLM_PROVIDER`, `GROQ_API_KEY`, `DEFAULT_MODEL`, `AVAILABLE_MODELS`; optional:
 `TITLE_MODEL`, `MODEL_LABELS`. (`JWT_SECRET` is no longer used.)
 
-**Frontend (`frontend/.env`)** — required: `VITE_API_URL`, `VITE_APP_ENV`,
+**Frontend (`frontend/.env`)** — required: `VITE_APP_ENV`,
 `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_LLM_PROVIDER`, `VITE_DEFAULT_MODEL`,
-`VITE_AVAILABLE_MODELS`; optional: `VITE_SOCKET_URL`, `VITE_MODEL_LABELS`. All
-`VITE_*` vars are injected at build time; in production `VITE_API_URL` is the
-deployed origin.
+`VITE_AVAILABLE_MODELS`; optional: `VITE_API_URL`, `VITE_SOCKET_URL`,
+`VITE_MODEL_LABELS`. All `VITE_*` vars are injected at **build time**. Leave
+`VITE_API_URL` blank when the backend serves the SPA (the combined Docker image /
+single-URL deploy) so the browser calls a relative `/api`; set it only when the
+API lives on a different origin.
 
 Get all Clerk keys from the [Clerk dashboard](https://dashboard.clerk.com/~/api-keys).
 The committed `.env` files only contain **placeholders** — the backend won't
@@ -81,10 +83,32 @@ real keys.
 
 ### Production
 
+**Bare metal / Node:**
+
 ```bash
 npm run build      # builds frontend/dist
 npm start          # NODE_ENV=production serves the API + built UI on :5001
 ```
+
+**Docker (recommended — one image, one URL):**
+
+A single multi-stage image builds the SPA and runs the API that serves it, so the
+whole app is reachable on one origin (no CORS). All config comes from the shared
+root `.env`: `VITE_*` are read as build args, backend vars are injected at runtime.
+
+```bash
+docker compose up --build        # build + run
+# then open http://localhost:5002   (or whatever PORT is in .env)
+```
+
+`docker compose` forces `NODE_ENV=production` and runs as a non-root user with a
+`/api/health` healthcheck and graceful (SIGTERM) shutdown. For a real deploy, set
+`CLIENT_URL` to your public URL and keep `VITE_API_URL` blank (same origin). The
+image can run anywhere — Render, Railway, Fly.io, Cloud Run, a VM, etc. See
+[`.env.example`](.env.example) for the production variable notes.
+
+> The build context excludes `.env` (see `.dockerignore`), so secrets are never
+> baked into the image — only the public `VITE_*` build args are.
 
 ## 🔌 API
 
