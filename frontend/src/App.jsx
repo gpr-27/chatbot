@@ -1,64 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import Auth from './components/Auth';
-import HomePage from './components/HomePage';
-import './index.css';
+import { useAppAuth } from "./context/AuthContext";
+import AuthScreen from "./components/AuthScreen";
+import ChatApp from "./components/ChatApp";
+import BrandSpark from "./components/BrandSpark";
+import ErrorBoundary from "./components/ErrorBoundary";
 
-function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function App() {
+  const { ready, isAuthed } = useAppAuth();
 
-  // Check if user is authenticated on app load
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
-    try {
-      const response = await fetch('/api/auth/check', {
-        method: 'GET',
-        credentials: 'include', // Include cookies
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-      } else {
-        setUser(null);
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogin = (userData) => {
-    setUser(userData);
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-  };
-
-  if (loading) {
+  if (!ready) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Loading...</p>
+      <div className="boot-screen">
+        <div className="boot-mark">
+          <BrandSpark size={52} />
+        </div>
+        <div className="boot-bar">
+          <span />
+        </div>
+        <p className="boot-text">Warming up the LPU…</p>
       </div>
     );
   }
 
   return (
-    <div className="app">
-      {user ? (
-        <HomePage user={user} onLogout={handleLogout} />
-      ) : (
-        <Auth onLogin={handleLogin} />
-      )}
-    </div>
+    <ErrorBoundary>{isAuthed ? <ChatApp /> : <AuthScreen />}</ErrorBoundary>
   );
 }
-
-export default App;
