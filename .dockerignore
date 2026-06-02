@@ -24,10 +24,10 @@
 logs
 npm-debug.log*
 
-# Build/deploy metadata — not needed inside the image
+# Build/deploy metadata — not needed inside the image. (Only root-level files are
+# listed here; the Dockerfile copies frontend/ and backend/ manifests explicitly,
+# so we must NOT add bare `package.json`/`package-lock.json` patterns.)
 Dockerfile
 .dockerignore
 render.yaml
 Readme.md
-package.json
-package-lock.json
