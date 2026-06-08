@@ -110,6 +110,12 @@ body,
   height: 100%;
 }
 
+/* Stop iOS from inflating font sizes on orientation change. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   font-family: var(--font-body);
   background: var(--bg);
@@ -164,6 +170,15 @@ a {
 }
 a:hover {
   text-decoration: underline;
+}
+
+/* Remove the grey tap-flash on touch devices for interactive elements. */
+button,
+a,
+input,
+textarea,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
 }
 
 ::selection {
