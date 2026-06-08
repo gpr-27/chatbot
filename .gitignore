@@ -28,3 +28,6 @@ dist-ssr
 
 .env
 .env.local
+
+# Local Render env manifest — holds real secrets once filled in. Never commit.
+render-upload.env

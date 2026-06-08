@@ -9,6 +9,7 @@
 # are supplied as build args; backend config is injected at runtime.
 .env
 .env.*
+render-upload.env
 
 # VCS / tooling / editor noise
 .git
